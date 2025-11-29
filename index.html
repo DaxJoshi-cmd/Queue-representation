@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Queue Visualizer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 { margin-top: 20px; }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-top: 30px;
+            width: 100%;
+        }
+
+        /* Control Panel */
+        .controls {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        input {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+            width: 100px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+
+        button:active { transform: scale(0.95); }
+
+        .btn-enq { background-color: #009688; color: white; } /* Teal */
+        .btn-deq { background-color: #E91E63; color: white; } /* Pink */
+        .btn-peek { background-color: #FFC107; color: black; } /* Amber */
+
+        /* The Queue Pipe (Horizontal) */
+        .queue-wrapper {
+            position: relative;
+            margin-top: 40px;
+        }
+
+        .queue-container {
+            display: flex;
+            flex-direction: row; /* Horizontal alignment */
+            align-items: center;
+            height: 80px;
+            min-width: 600px;
+            border-top: 4px solid #fff;
+            border-bottom: 4px solid #fff;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+            overflow: hidden; /* Hide items overflowing */
+        }
+
+        /* Labels for Front and Rear */
+        .label {
+            position: absolute;
+            font-size: 14px;
+            color: #aaa;
+            font-weight: bold;
+            top: -25px;
+        }
+        .label-front { left: 10px; color: #E91E63; }
+        .label-rear { right: 10px; color: #009688; }
+
+        /* Queue Items */
+        .queue-item {
+            width: 60px;
+            height: 60px;
+            background-color: #03A9F4; /* Light Blue */
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 20px;
+            margin-right: 5px;
+            border-radius: 50%; /* Circle shape */
+            box-shadow: 0 4px 5px rgba(0,0,0,0.3);
+            animation: slideIn 0.4s ease-out;
+            flex-shrink: 0;
+        }
+
+        .highlight {
+            background-color: #FFC107 !important;
+            color: black;
+            transform: scale(1.1);
+            transition: 0.2s;
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateX(50px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        .message-box {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #ccc;
+            height: 30px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Queue Visualizer (FIFO)</h1>
+
+    <div class="container">
+        <div class="controls">
+            <input type="number" id="inputVal" placeholder="Value" />
+            <button class="btn-enq" onclick="enqueue()">Enqueue (Add)</button>
+            <button class="btn-deq" onclick="dequeue()">Dequeue (Remove)</button>
+            <button class="btn-peek" onclick="peek()">Peek Front</button>
+        </div>
+
+        <div class="message-box" id="msgBox">Waiting for input...</div>
+
+        <div class="queue-wrapper">
+            <div class="label label-front">FRONT (Out)</div>
+            <div class="label label-rear">REAR (In)</div>
+            
+            <div class="queue-container" id="queueBox">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const MAX_SIZE = 8;
+        const queueBox = document.getElementById('queueBox');
+        const inputVal = document.getElementById('inputVal');
+        const msgBox = document.getElementById('msgBox');
+
+        function log(msg, color="#fff") {
+            msgBox.innerText = msg;
+            msgBox.style.color = color;
+        }
+
+        function enqueue() {
+            const val = inputVal.value;
+
+            if (queueBox.childElementCount >= MAX_SIZE) {
+                log("Queue Overflow! (Queue is full)", "#E91E63");
+                return;
+            }
+
+            if (val === "") {
+                log("Enter a number first.", "#FFC107");
+                return;
+            }
+
+            const item = document.createElement('div');
+            item.classList.add('queue-item');
+            item.innerText = val;
+
+            // In Queue, we add to the END (Rear)
+            queueBox.appendChild(item);
+            
+            log(`Enqueued ${val} at Rear.`);
+            inputVal.value = "";
+            inputVal.focus();
+        }
+
+        function dequeue() {
+            if (queueBox.childElementCount === 0) {
+                log("Queue Underflow! (Queue is empty)", "#E91E63");
+                return;
+            }
+
+            // In Queue, we remove from the START (Front)
+            // In HTML DOM, firstElementChild is the left-most item
+            const frontItem = queueBox.firstElementChild;
+            const val = frontItem.innerText;
+
+            queueBox.removeChild(frontItem);
+            log(`Dequeued ${val} from Front.`);
+        }
+
+        function peek() {
+            if (queueBox.childElementCount === 0) {
+                log("Queue is empty.", "#E91E63");
+                return;
+            }
+
+            const frontItem = queueBox.firstElementChild;
+            const val = frontItem.innerText;
+
+            // Highlight animation
+            frontItem.classList.add('highlight');
+            setTimeout(() => {
+                frontItem.classList.remove('highlight');
+            }, 500);
+
+            log(`Front element is ${val}.`, "#FFC107");
+        }
+    </script>
+</body>
+</html>
